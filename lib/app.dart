@@ -7,7 +7,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // la primera pantalla en mostrarse es nuestra mainscreen que contiene el bottomnavbar
+      debugShowCheckedModeBanner: false, // La primera pantalla en mostrarse es nuestra mainscreen que contiene el bottomnavbar
       home: PantallaPrincipal(), 
     );
   }
