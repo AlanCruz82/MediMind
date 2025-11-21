@@ -37,7 +37,7 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
         },
         items: [ // botones de la app con los cuales vamos a navegar entre pantallas
           BottomNavigationBarItem(icon: Icon(Icons.medical_information), label: "Pastillero"),
-          BottomNavigationBarItem(icon: Icon(Icons.medical_information_sharp), label: "Reporte")
+          BottomNavigationBarItem(icon: Icon(Icons.text_snippet), label: "Reporte")
         ],
       ),
     );
