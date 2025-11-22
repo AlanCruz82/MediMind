@@ -15,8 +15,8 @@ class _BienvenidaState extends State<Bienvenida> {
   }
 
   TextEditingController _nombreMedicamento = TextEditingController();
-  int _currentValue = 3;
-  DateTime now = DateTime.now();
+  int _dosis = 50;
+  DateTime? _fechaFinMedicamento = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
@@ -47,34 +47,42 @@ class _BienvenidaState extends State<Bienvenida> {
                         padding: EdgeInsets.all(10),
                       ),
                       CupertinoCalendarPickerButton(
-                        minimumDateTime: DateTime(now.year-1, now.month, now.day),
-                        maximumDateTime: DateTime(now.year+1, now.month, now.day),
-                        initialDateTime: DateTime(now.year, now.month, now.day),
-                        currentDateTime: DateTime(now.year, now.month, now.day),
+                        minimumDateTime: DateTime.now(),
+                        maximumDateTime: DateTime(2026, 7, 10),
+                        initialDateTime: DateTime.now(),
+                        currentDateTime: DateTime.now(),
                         mode: CupertinoCalendarMode.dateTime,
-                        timeLabel: 'Inicio',
-                        onDateTimeChanged: (startdate) {
-                          print(startdate);
+                        timeLabel: 'Final',
+                        onDateTimeChanged: (fechaFin) {
+                          _fechaFinMedicamento = fechaFin;
                         },
                       ),
                       Padding(
                         padding: EdgeInsets.all(10),
                       ),
                       Text("Dosis"),
-                      NumberPicker(
-                        value: _currentValue,
-                        minValue: 0,
-                        maxValue: 100,
-                        step: 10,
-                        itemHeight: 100,
-                        axis: Axis.horizontal,
-                        onChanged: (value) =>
-                            setState(() => _currentValue = value),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.black26),
-                        ),
-                      ),
+                      //Construimos un Stateful local para poder visualizar el cambio del seleccionador de numero 
+                      StatefulBuilder(builder: (BuildContext context, StateSetter setNumberState){
+                        return Column(
+                        children: [
+                          NumberPicker(
+                            value: _dosis,
+                            minValue: 0,
+                            maxValue: 500,
+                            step: 5,
+                            itemHeight: 50,
+                            axis: Axis.horizontal,
+                            onChanged: (value) =>
+                                setNumberState(() => _dosis = value),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color.fromARGB(66, 155, 141, 141)),
+                            ),
+                          ),
+                          Text('Mg: $_dosis'),
+                        ],
+                        );
+                      }),
               ],
             ),
                   actions: [
@@ -88,6 +96,7 @@ class _BienvenidaState extends State<Bienvenida> {
                       child: Text("Agregar"),
                       onPressed: () {
                         //Logica para establecer la alarma
+                        print(_nombreMedicamento.text + " " + _fechaFinMedicamento.toString() + " " + _dosis.toString());
                         Navigator.of(context).pop();
                       },
                     ),
