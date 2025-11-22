@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
+import 'package:numberpicker/numberpicker.dart';
 
 class Bienvenida extends StatefulWidget {
   @override
@@ -12,35 +14,87 @@ class _BienvenidaState extends State<Bienvenida> {
     super.initState();
   }
 
+  TextEditingController _nombreMedicamento = TextEditingController();
+  int _currentValue = 3;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //Logica para agregar medicamentos
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () => showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: Text("Agregar medicamento"),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: _nombreMedicamento,
+                        decoration: InputDecoration(
+                          labelText : "Medicamento",
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(10),
+                      ),
+                      Text("Fecha final medicacion"),
+                      Padding(
+                        padding: EdgeInsets.all(10),
+                      ),
+                      CupertinoCalendarPickerButton(
+                        minimumDateTime: DateTime(2024, 7, 10),
+                        maximumDateTime: DateTime(2025, 7, 10),
+                        initialDateTime: DateTime(2024, 8, 15, 9, 41),
+                        currentDateTime: DateTime(2024, 8, 15),
+                        mode: CupertinoCalendarMode.dateTime,
+                        timeLabel: 'Inicio',
+                        onDateTimeChanged: (startdate) {
+                          print(startdate);
+                        },
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(10),
+                      ),
+                      Text("Dosis"),
+                      NumberPicker(
+                        value: _currentValue,
+                        minValue: 0,
+                        maxValue: 100,
+                        step: 10,
+                        itemHeight: 100,
+                        axis: Axis.horizontal,
+                        onChanged: (value) =>
+                            setState(() => _currentValue = value),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.black26),
+                        ),
+                      ),
+              ],
+            ),
+                  actions: [
+                    TextButton(
+                      child: Text("Cancelar"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    TextButton(
+                      child: Text("Agregar"),
+                      onPressed: () {
+                        //Logica para establecer la alarma
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+          ),
+        ),
+      ),
+      
       body: ListView(
         children: [
-
-          //Código para el botón de agregar medicamentos.
-          Container(
-            height: 50,
-            margin: EdgeInsets.fromLTRB(70, 15, 70, 2),
-            child: ElevatedButton(
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22)
-                )
-              ),
-              onPressed: null,
-              child: Text(
-                "Agregar Medicamento",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold
-                ),
-              ),
-            )
-          ),
-
           //Aqui debe ir el for que itere de firebase.
           //Código de la tarjeta.
           Container(
@@ -175,7 +229,6 @@ class _BienvenidaState extends State<Bienvenida> {
             ),
           )
           //Fin del código de la tarjeta.
-
         ],
       )
     );
