@@ -16,12 +16,15 @@ class _BienvenidaState extends State<Bienvenida> {
 
   TextEditingController _nombreMedicamento = TextEditingController();
   int _currentValue = 3;
+  DateTime now = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       //Logica para agregar medicamentos
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.redAccent,
+        foregroundColor: Colors.black,
         child: Icon(Icons.add),
         onPressed: () => showDialog<String>(
           context: context,
@@ -39,15 +42,15 @@ class _BienvenidaState extends State<Bienvenida> {
                       Padding(
                         padding: EdgeInsets.all(10),
                       ),
-                      Text("Fecha final medicacion"),
+                      Text("Fecha Final de Medicación"),
                       Padding(
                         padding: EdgeInsets.all(10),
                       ),
                       CupertinoCalendarPickerButton(
-                        minimumDateTime: DateTime(2024, 7, 10),
-                        maximumDateTime: DateTime(2025, 7, 10),
-                        initialDateTime: DateTime(2024, 8, 15, 9, 41),
-                        currentDateTime: DateTime(2024, 8, 15),
+                        minimumDateTime: DateTime(now.year-1, now.month, now.day),
+                        maximumDateTime: DateTime(now.year+1, now.month, now.day),
+                        initialDateTime: DateTime(now.year, now.month, now.day),
+                        currentDateTime: DateTime(now.year, now.month, now.day),
                         mode: CupertinoCalendarMode.dateTime,
                         timeLabel: 'Inicio',
                         onDateTimeChanged: (startdate) {
