@@ -9,6 +9,22 @@ class Bienvenida extends StatefulWidget {
   _BienvenidaState createState() => _BienvenidaState();
 }
 
+class Medicamento {
+  final String nombre;
+  final DateTime fInicio;
+  final DateTime fFinal;
+  final String hora;
+  final int dosis;
+
+  Medicamento({
+    required this.nombre,
+    required this.fInicio,
+    required this.fFinal,
+    required this.hora,
+    required this.dosis,
+  });
+}
+
 class _BienvenidaState extends State<Bienvenida> {
 
   @override
@@ -21,9 +37,34 @@ class _BienvenidaState extends State<Bienvenida> {
   int _dosis = 50;
   DateTime? _fechaFinMedicamento = DateTime.now();
   List<Widget> _tarjetas = [];
+  
+  String _recortarFecha(String fecha){
+    String recortado = fecha.split('T')[0];
+    return recortado;
+  }
+  
+  Future<void> _guardarMedicinaEnFirestore(Medicamento medicina) async {
+    try {
+      final datosMedicamento = {
+        'nombre-med':medicina.nombre,
+        'fecha-inicio':medicina.fInicio.toIso8601String().split('T')[0],
+        'fecha-fin':medicina.fFinal.toIso8601String().split('T')[0],
+        'hora':medicina.hora,
+        'dosis':medicina.dosis,
+      };
+      
+      await FirebaseFirestore.instance.collection('medicamentos').add(datosMedicamento);
+      print ('Medicamento guardado con éxito.');
+    } catch (e) {
+      print ('Medicamento no guardado.');
+      throw Error();
+    }
+  }
 
   Future<void> _entrada() async {
     final snapshot = await FirebaseFirestore.instance.collection('medicamentos').get();
+    String fechaUno = "";
+    String fechaDos = "";
     _tarjetas = [
       for (var doc in snapshot.docs)
       //Código de la tarjeta.
@@ -124,7 +165,7 @@ class _BienvenidaState extends State<Bienvenida> {
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            "Periodo ${doc['fecha-inicio']} - ${doc['fecha-fin']}",
+                            "Periodo: ${doc['fecha-inicio']} a ${doc['fecha-fin']}",
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 16,
@@ -246,11 +287,19 @@ class _BienvenidaState extends State<Bienvenida> {
                           ),
                           TextButton(
                             child: Text("Agregar"),
-                            onPressed: () {
-                              //Logica para establecer la alarma
-                              print(_nombreMedicamento.text + " " +
-                                  _fechaFinMedicamento.toString() + " " +
-                                  _dosis.toString());
+                            onPressed: () async {
+                              final TimeOfDay horaMedi = TimeOfDay.fromDateTime(_fechaFinMedicamento!);
+                              final String horaMediFormat = horaMedi.format(context);
+                              final nuevoMedicamento = Medicamento(
+                                  nombre: _nombreMedicamento.text,
+                                  fInicio: DateTime.now(),
+                                  fFinal: _fechaFinMedicamento!,
+                                  hora: horaMediFormat,
+                                  dosis: _dosis
+                              );
+                              await _guardarMedicinaEnFirestore(nuevoMedicamento);
+                              await _entrada();
+                              setState(() {});
                               Navigator.of(context).pop();
                             },
                           ),
