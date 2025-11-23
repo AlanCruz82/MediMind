@@ -42,6 +42,15 @@ class _BienvenidaState extends State<Bienvenida> {
     String recortado = fecha.split('T')[0];
     return recortado;
   }
+
+  Future<void> _eliminarMedicamento(QueryDocumentSnapshot doc) async {
+    try{
+      final String ID = doc.id;
+      await FirebaseFirestore.instance.collection('medicamentos').doc(ID).delete();
+      await _entrada();
+      setState(() {});
+    } catch (e) {}
+  }
   
   Future<void> _guardarMedicinaEnFirestore(Medicamento medicina) async {
     try {
@@ -185,7 +194,9 @@ class _BienvenidaState extends State<Bienvenida> {
                                         .circular(4)
                                 )
                             ),
-                            onPressed: null,
+                            onPressed: () {
+                              _eliminarMedicamento(doc);
+                            },
                             child: Text(
                               "Eliminar",
                               style: TextStyle(
@@ -208,6 +219,7 @@ class _BienvenidaState extends State<Bienvenida> {
 
     @override
     Widget build(BuildContext context) {
+    DateTime fecha = DateTime.now();
       return Scaffold(
         //Logica para agregar medicamentos
           floatingActionButton: FloatingActionButton(
@@ -238,7 +250,7 @@ class _BienvenidaState extends State<Bienvenida> {
                             ),
                             CupertinoCalendarPickerButton(
                               minimumDateTime: DateTime.now(),
-                              maximumDateTime: DateTime(2026, 7, 10),
+                              maximumDateTime: DateTime(fecha.year+2, fecha.month, fecha.day),
                               initialDateTime: DateTime.now(),
                               currentDateTime: DateTime.now(),
                               mode: CupertinoCalendarMode.dateTime,

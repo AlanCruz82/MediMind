@@ -6,6 +6,13 @@ class Contador extends StatefulWidget {
 }
 
 class _ContadorState extends State<Contador> {
+  final emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {

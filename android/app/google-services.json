@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "856994908218",
+    "project_id": "medimind-4d6a4",
+    "storage_bucket": "medimind-4d6a4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856994908218:android:e818aca78e05acc7878d03",
+        "android_client_info": {
+          "package_name": "com.example.medimind"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1xLbJ3_UljaG9CvwJ8MzO3X_y1OCQV8k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
