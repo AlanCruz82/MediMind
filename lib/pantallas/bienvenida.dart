@@ -37,11 +37,6 @@ class _BienvenidaState extends State<Bienvenida> {
   int _dosis = 50;
   DateTime? _fechaFinMedicamento = DateTime.now();
   List<Widget> _tarjetas = [];
-  
-  String _recortarFecha(String fecha){
-    String recortado = fecha.split('T')[0];
-    return recortado;
-  }
 
   Future<void> _eliminarMedicamento(QueryDocumentSnapshot doc) async {
     try{
@@ -72,8 +67,6 @@ class _BienvenidaState extends State<Bienvenida> {
 
   Future<void> _entrada() async {
     final snapshot = await FirebaseFirestore.instance.collection('medicamentos').get();
-    String fechaUno = "";
-    String fechaDos = "";
     _tarjetas = [
       for (var doc in snapshot.docs)
       //Código de la tarjeta.
