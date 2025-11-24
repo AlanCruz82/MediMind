@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 class Bienvenida extends StatefulWidget {
   @override
   _BienvenidaState createState() => _BienvenidaState();
+}
+
+//Funcion callback que se ejecuta cuando enciende la alarma
+@pragma('vm:entry-point')
+void sonarAlarma() {
+  print("ALARMA EJECUTADA");
 }
 
 class _BienvenidaState extends State<Bienvenida> {
@@ -16,7 +23,25 @@ class _BienvenidaState extends State<Bienvenida> {
 
   TextEditingController _nombreMedicamento = TextEditingController();
   int _dosis = 50;
-  DateTime? _fechaFinMedicamento = DateTime.now();
+  DateTime _fechaFinMedicamento = DateTime.now();
+
+  //Establecemos la alarma con sus configuraciones
+  void establecerAlarma(DateTime fechaMedicamento) async {
+    //Id unico en base la fecha-tiempo y milisegundos
+    final int id = DateTime.now().millisecondsSinceEpoch;
+
+    await AndroidAlarmManager.oneShotAt(
+      fechaMedicamento, //Fecha-tiempo en que se enciende la alarma (retraso aprox 2 min)
+      id,
+      sonarAlarma, //Funcion callback                     
+      exact: true,
+      wakeup: true,
+      allowWhileIdle: true, //Permite que la alarma suene aunque el Android este en modo Idle
+      rescheduleOnReboot: true,
+    );
+
+    print("Alarma programada correctamente");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +122,7 @@ class _BienvenidaState extends State<Bienvenida> {
                       onPressed: () {
                         //Logica para establecer la alarma
                         print(_nombreMedicamento.text + " " + _fechaFinMedicamento.toString() + " " + _dosis.toString());
+                        establecerAlarma(_fechaFinMedicamento);
                         Navigator.of(context).pop();
                       },
                     ),
