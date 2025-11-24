@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
+import 'package:medimind/notificacion.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
@@ -11,7 +12,9 @@ class Bienvenida extends StatefulWidget {
 //Funcion callback que se ejecuta cuando enciende la alarma
 @pragma('vm:entry-point')
 void sonarAlarma() {
-  print("ALARMA EJECUTADA");
+  // print("ALARMA EJECUTADA");
+  Notificacion.inicializar();
+  Notificacion.notificacionProgramada('Alarma medicamento', '!Tomate tu medicamento ya!');
 }
 
 class _BienvenidaState extends State<Bienvenida> {
