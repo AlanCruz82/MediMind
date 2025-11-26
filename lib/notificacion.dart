@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:medimind/fotografia.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 
@@ -12,6 +13,20 @@ class Notificacion {
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         iOS: DarwinInitializationSettings(),
       ),
+      //Callback de las acciones de la notificacion
+      onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+        if (notificationResponse.notificationResponseType == NotificationResponseType.selectedNotificationAction) {
+          //Ejecucion en base al id de la accion (Accion_ok o Accion_cancelar)
+          switch (notificationResponse.actionId) {
+            case 'Accion_ok':
+              print(await Fotografia.tomarFoto());
+              break;
+            case 'Accion_cancelar':
+              print("El usuario presionó Postergar");
+              break;
+          }
+        }
+    },
     );
 
     tz.initializeTimeZones();
@@ -38,7 +53,7 @@ class Notificacion {
       importance: Importance.max,
       priority: Priority.high,
       actions: <AndroidNotificationAction>[
-        AndroidNotificationAction('Accion_ok', 'Consumir'),
+        AndroidNotificationAction('Accion_ok', 'Consumir', showsUserInterface: true),
         AndroidNotificationAction('Accion_cancelar', 'Postergar'),
       ],
     );
