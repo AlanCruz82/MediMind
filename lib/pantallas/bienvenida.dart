@@ -2,19 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:medimind/notificacion.dart';
 import 'package:numberpicker/numberpicker.dart';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 class Bienvenida extends StatefulWidget {
   @override
   _BienvenidaState createState() => _BienvenidaState();
-}
-
-//Funcion callback que se ejecuta cuando enciende la alarma
-@pragma('vm:entry-point')
-void sonarAlarma() {
-  // print("ALARMA EJECUTADA");
-  Notificacion.inicializar();
-  Notificacion.notificacionProgramada('Alarma medicamento', '!Tomate tu medicamento ya!');
 }
 
 class _BienvenidaState extends State<Bienvenida> {
@@ -33,17 +24,8 @@ class _BienvenidaState extends State<Bienvenida> {
     //Id unico en base la fecha-tiempo y milisegundos
     final int id = DateTime.now().millisecondsSinceEpoch;
 
-    await AndroidAlarmManager.oneShotAt(
-      fechaMedicamento, //Fecha-tiempo en que se enciende la alarma (retraso aprox 2 min)
-      id,
-      sonarAlarma, //Funcion callback                     
-      exact: true,
-      wakeup: true,
-      allowWhileIdle: true, //Permite que la alarma suene aunque el Android este en modo Idle
-      rescheduleOnReboot: true,
-    );
-
-    print("Alarma programada correctamente");
+    //Programamos la notificacion
+    Notificacion.programarNotificacion(id, 'Medicamento', 'Tomate tu medicamento',fechaMedicamento);
   }
 
   @override

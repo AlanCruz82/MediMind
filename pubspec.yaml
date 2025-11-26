@@ -36,7 +36,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   cupertino_calendar_picker: ^2.2.6
   numberpicker: ^2.1.2
-  android_alarm_manager_plus: ^5.0.0
   flutter_local_notifications: ^19.5.0
 
 dev_dependencies:
