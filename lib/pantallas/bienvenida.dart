@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
+import 'package:medimind/notificacion.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:medimind/firebase_options.dart';
@@ -35,8 +36,17 @@ class _BienvenidaState extends State<Bienvenida> {
 
   TextEditingController _nombreMedicamento = TextEditingController();
   int _dosis = 50;
-  DateTime? _fechaFinMedicamento = DateTime.now();
-  List<Widget> _tarjetas = [];
+    DateTime _fechaFinMedicamento = DateTime.now();
+    List<Widget> _tarjetas = [];
+
+  //Establecemos la alarma con sus configuraciones
+  void establecerAlarma(DateTime fechaMedicamento) async {
+    //Id unico en base la fecha-tiempo y milisegundos
+    final int id = DateTime.now().millisecondsSinceEpoch;
+
+    //Programamos la notificacion
+    Notificacion.programarNotificacion(id, 'Medicamento', 'Tomate tu medicamento',fechaMedicamento);
+  }
 
   Future<void> _eliminarMedicamento(QueryDocumentSnapshot doc) async {
     try{
@@ -210,7 +220,7 @@ class _BienvenidaState extends State<Bienvenida> {
 
   }
 
-    @override
+  @override
     Widget build(BuildContext context) {
     DateTime fecha = DateTime.now();
       return Scaffold(
@@ -302,6 +312,9 @@ class _BienvenidaState extends State<Bienvenida> {
                                   hora: horaMediFormat,
                                   dosis: _dosis
                               );
+                              //Logica para establecer la alarma
+                              print(_nombreMedicamento.text + " " + _fechaFinMedicamento.toString() + " " + _dosis.toString());
+                              establecerAlarma(_fechaFinMedicamento);
                               await _guardarMedicinaEnFirestore(nuevoMedicamento);
                               await _entrada();
                               setState(() {});

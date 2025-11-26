@@ -1,9 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:medimind/notificacion.dart';
 import 'package:medimind/firebase_options.dart';
 import 'app.dart'; // Raíz del proyecto
 
-void main() async {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Notificacion.inicializar();
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
