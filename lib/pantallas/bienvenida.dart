@@ -3,7 +3,6 @@ import 'package:cupertino_calendar_picker/cupertino_calendar_picker.dart';
 import 'package:medimind/notificacion.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:medimind/firebase_options.dart';
 
 class Bienvenida extends StatefulWidget {
   @override
@@ -11,17 +10,17 @@ class Bienvenida extends StatefulWidget {
 }
 
 class Medicamento {
+  final int id;
   final String nombre;
-  final DateTime fInicio;
-  final DateTime fFinal;
-  final String hora;
+  final DateTime fecha_inicial;
+  final DateTime fecha_final;
   final int dosis;
 
   Medicamento({
+    required this.id,
     required this.nombre,
-    required this.fInicio,
-    required this.fFinal,
-    required this.hora,
+    required this.fecha_inicial,
+    required this.fecha_final,
     required this.dosis,
   });
 }
@@ -31,52 +30,61 @@ class _BienvenidaState extends State<Bienvenida> {
   @override
   void initState() {
     super.initState();
-    _entrada();
+    _obtenerMedicamento();
   }
 
+  final db = FirebaseFirestore.instance;
   TextEditingController _nombreMedicamento = TextEditingController();
   int _dosis = 50;
   DateTime _fechaFinMedicamento = DateTime.now();
+  DateTime _fechaInicioMedicamento = DateTime.now();
   List<Widget> _tarjetas = [];
 
   //Establecemos la alarma con sus configuraciones
-  void establecerAlarma(DateTime fechaMedicamento) async {
-    //Id unico en base la fecha-tiempo y milisegundos
-    final int id = DateTime.now().millisecondsSinceEpoch;
-
+  void establecerAlarma(Medicamento medicamento) async {
     //Programamos la notificacion
-    Notificacion.programarNotificacion(id, 'Medicamento', 'Tomate tu medicamento',fechaMedicamento);
+    Notificacion.programarNotificacion(medicamento);
   }
 
-  Future<void> _eliminarMedicamento(QueryDocumentSnapshot doc) async {
-    try{
-      final String ID = doc.id;
-      await FirebaseFirestore.instance.collection('medicamentos').doc(ID).delete();
-      await _entrada();
-      setState(() {});
-    } catch (e) {}
-  }
-  
-  Future<void> _guardarMedicinaEnFirestore(Medicamento medicina) async {
-    try {
-      final datosMedicamento = {
-        'nombre-med':medicina.nombre,
-        'fecha-inicio':medicina.fInicio.toIso8601String().split('T')[0],
-        'fecha-fin':medicina.fFinal.toIso8601String().split('T')[0],
-        'hora':medicina.hora,
-        'dosis':medicina.dosis,
-      };
-      
-      await FirebaseFirestore.instance.collection('medicamentos').add(datosMedicamento);
-      print ('Medicamento guardado con éxito.');
-    } catch (e) {
-      print ('Medicamento no guardado.');
-      throw Error();
-    }
+  //Metodo para guardar los datos de la cita en firebase con los valores del usuario
+  void guardarMedicamento(Medicamento medicamento) async{
+    Map<String,dynamic> detallesMedicamento = {
+      'nombre' : medicamento.nombre,
+      'fecha_inicio' : medicamento.fecha_inicial,
+      'fecha_final' : medicamento.fecha_final,
+      'dosis' : medicamento.dosis
+    };
+    //Guardamos el medicamento en la coleccion de medicamentos con id de su fecha final en milisegundos
+    await db.collection("Medicamentos").doc(medicamento.id.toString()).set(detallesMedicamento);
   }
 
-  Future<void> _entrada() async {
-    final snapshot = await FirebaseFirestore.instance.collection('medicamentos').get();
+  void _eliminarMedicamento(QueryDocumentSnapshot doc) async {
+    //Obtenemos el id del medicamento que se quiere eliminar
+    String docId = doc.id;
+
+    await db.collection("Medicamentos").doc(docId).delete();
+    _obtenerMedicamento();
+  }
+
+  //Obtenemos la hora del Timstamp para mostrarla en formato HH:MM
+  String _obtenerHora(Timestamp timestamp) {
+    DateTime fecha = timestamp.toDate();
+    String hora = fecha.hour.toString().padLeft(2, '0');
+    String minutos = fecha.minute.toString().padLeft(2, '0');
+    return "$hora:$minutos";
+  } 
+
+  //Obtenemos la fecha del Timestamp guardado en firebase
+  String obtenerFecha(DateTime fecha) {
+    final d = fecha.day.toString().padLeft(2, '0');
+    final m = fecha.month.toString().padLeft(2, '0');
+    final y = fecha.year.toString();
+    return "$d/$m/$y";
+  } 
+
+  //Obtenemos los medicamentos almacenamos en firebase y los construimos en una tarjeta
+  Future<void> _obtenerMedicamento() async {
+    final snapshot = await FirebaseFirestore.instance.collection('Medicamentos').get();
     _tarjetas = [
       for (var doc in snapshot.docs)
       //Código de la tarjeta.
@@ -100,7 +108,7 @@ class _BienvenidaState extends State<Bienvenida> {
 
                     //Texto para el nombre del medicamento.
                     child: Text(
-                      doc['nombre-med'],
+                      doc['nombre'],
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                           fontSize: 30,
@@ -134,7 +142,7 @@ class _BienvenidaState extends State<Bienvenida> {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                            "Hora: ${doc['hora']}",
+                            "Hora: ${_obtenerHora(doc['fecha_final'] as Timestamp)}",
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 16,
@@ -177,7 +185,7 @@ class _BienvenidaState extends State<Bienvenida> {
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            "Periodo: ${doc['fecha-inicio']} a ${doc['fecha-fin']}",
+                            "Periodo: ${obtenerFecha(doc['fecha_inicio'].toDate())} a ${obtenerFecha(doc['fecha_final'].toDate())}",
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 16,
@@ -217,118 +225,115 @@ class _BienvenidaState extends State<Bienvenida> {
       )
       //Fin del código de la tarjeta.
     ];
+    //Refrescamos el estado del interfaz para mostrar los medicamentos obtenidos
+    setState(() {
 
+    });
   }
 
   @override
-    Widget build(BuildContext context) {
-    DateTime fecha = DateTime.now();
-      return Scaffold(
-        //Logica para agregar medicamentos
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: Colors.redAccent,
-            foregroundColor: Colors.black,
-            child: Icon(Icons.add),
-            onPressed: () =>
-                showDialog<String>(
-                  context: context,
-                  builder: (BuildContext context) =>
-                      AlertDialog(
-                        title: Text("Agregar medicamento"),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextField(
-                              controller: _nombreMedicamento,
-                              decoration: InputDecoration(
-                                labelText: "Medicamento",
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.all(10),
-                            ),
-                            Text("Fecha Final de Medicación"),
-                            Padding(
-                              padding: EdgeInsets.all(10),
-                            ),
-                            CupertinoCalendarPickerButton(
-                              minimumDateTime: DateTime.now(),
-                              maximumDateTime: DateTime(fecha.year+2, fecha.month, fecha.day),
-                              initialDateTime: DateTime.now(),
-                              currentDateTime: DateTime.now(),
-                              mode: CupertinoCalendarMode.dateTime,
-                              timeLabel: 'Final',
-                              onDateTimeChanged: (fechaFin) {
-                                _fechaFinMedicamento = fechaFin;
-                              },
-                            ),
-                            Padding(
-                              padding: EdgeInsets.all(10),
-                            ),
-                            Text("Dosis"),
-                            //Construimos un Stateful local para poder visualizar el cambio del seleccionador de numero
-                            StatefulBuilder(builder: (BuildContext context,
-                                StateSetter setNumberState) {
-                              return Column(
-                                children: [
-                                  NumberPicker(
-                                    value: _dosis,
-                                    minValue: 0,
-                                    maxValue: 500,
-                                    step: 5,
-                                    itemHeight: 50,
-                                    axis: Axis.horizontal,
-                                    onChanged: (value) =>
-                                        setNumberState(() => _dosis = value),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                          color: const Color.fromARGB(
-                                              66, 155, 141, 141)),
-                                    ),
-                                  ),
-                                  Text('Mg: $_dosis'),
-                                ],
-                              );
-                            }),
-                          ],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      //Logica para agregar medicamentos
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.redAccent,
+        foregroundColor: Colors.black,
+        child: Icon(Icons.add),
+        onPressed: () => showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: Text("Agregar medicamento"),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: _nombreMedicamento,
+                        decoration: InputDecoration(
+                          labelText : "Medicamento",
                         ),
-                        actions: [
-                          TextButton(
-                            child: Text("Cancelar"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                          TextButton(
-                            child: Text("Agregar"),
-                            onPressed: () async {
-                              final TimeOfDay horaMedi = TimeOfDay.fromDateTime(_fechaFinMedicamento!);
-                              final String horaMediFormat = horaMedi.format(context);
-                              final nuevoMedicamento = Medicamento(
-                                  nombre: _nombreMedicamento.text,
-                                  fInicio: DateTime.now(),
-                                  fFinal: _fechaFinMedicamento!,
-                                  hora: horaMediFormat,
-                                  dosis: _dosis
-                              );
-                              //Logica para establecer la alarma
-                              print(_nombreMedicamento.text + " " + _fechaFinMedicamento.toString() + " " + _dosis.toString());
-                              establecerAlarma(_fechaFinMedicamento);
-                              await _guardarMedicinaEnFirestore(nuevoMedicamento);
-                              await _entrada();
-                              setState(() {});
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
                       ),
-                ),
+                      Padding(
+                        padding: EdgeInsets.all(10),
+                      ),
+                      Text("Fecha Final de Medicación"),
+                      Padding(
+                        padding: EdgeInsets.all(10),
+                      ),
+                      CupertinoCalendarPickerButton(
+                        minimumDateTime: DateTime.now(),
+                        maximumDateTime: DateTime(2026, 7, 10),
+                        initialDateTime: DateTime.now(),
+                        currentDateTime: DateTime.now(),
+                        mode: CupertinoCalendarMode.dateTime,
+                        timeLabel: 'Final',
+                        onDateTimeChanged: (fechaFin) {
+                          _fechaFinMedicamento = fechaFin;
+                        },
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(10),
+                      ),
+                      Text("Dosis"),
+                      //Construimos un Stateful local para poder visualizar el cambio del seleccionador de numero 
+                      StatefulBuilder(builder: (BuildContext context, StateSetter setNumberState){
+                        return Column(
+                        children: [
+                          NumberPicker(
+                            value: _dosis,
+                            minValue: 0,
+                            maxValue: 500,
+                            step: 5,
+                            itemHeight: 100,
+                            axis: Axis.horizontal,
+                            onChanged: (value) =>
+                                setNumberState(() => _dosis = value),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color.fromARGB(66, 155, 141, 141)),
+                            ),
+                          ),
+                          Text('Mg: $_dosis'),
+                        ],
+                        );
+                      }),
+              ],
+            ),
+                  actions: [
+                    TextButton(
+                      child: Text("Cancelar"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    TextButton(
+                      child: Text("Agregar"),
+                      onPressed: () {
+                        //Construimos el objeto tipo Medicamento que vamos a almacenar y usar para las notificaciones
+                        // Crear ID único basado en datetime en milisegundos
+                        int id = DateTime.now().millisecondsSinceEpoch ~/ 10000;
+                        final med = Medicamento(
+                          id: id,
+                          nombre: _nombreMedicamento.text,
+                          fecha_inicial: _fechaInicioMedicamento,
+                          fecha_final: _fechaFinMedicamento,
+                          dosis: _dosis);
+                        //Almacenamos el medicamento en firebase
+                        guardarMedicamento(med);
+                        establecerAlarma(med);
+                        //Limpiamos los campos de los detalles del medicamento
+                        _nombreMedicamento.text = "";
+                        _fechaFinMedicamento = DateTime.now();
+                        _dosis = 50;
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
           ),
-
-          body: ListView(
+        ),
+      ),
+      body: ListView(
             children: _tarjetas,
-          )
-      );
-    }
+      )
+    );
+  }
 }

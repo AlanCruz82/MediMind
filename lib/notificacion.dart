@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:medimind/fotografia.dart';
+import 'package:medimind/pantallas/bienvenida.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 
@@ -45,8 +46,7 @@ class Notificacion {
     }
   }
 
-  static Future<void> programarNotificacion(int id, String titulo, String cuerpo, DateTime fechaMedicina,
-  ) async {
+  static Future<void> programarNotificacion(Medicamento medicamento) async {
     const androidDetalles = AndroidNotificationDetails(
       'important_notificacions',
       'My Channel',
@@ -66,10 +66,10 @@ class Notificacion {
     );
 
     await _notificacion.zonedSchedule(
-      10,
-      titulo,
-      cuerpo,
-      tz.TZDateTime.from(fechaMedicina, tz.local),
+      medicamento.id,
+      medicamento.nombre,
+      'Tomate tu ${medicamento.nombre}',
+      tz.TZDateTime.from(medicamento.fecha_final, tz.local),
       detallesNotificacion,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
