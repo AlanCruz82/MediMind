@@ -36,8 +36,8 @@ class _BienvenidaState extends State<Bienvenida> {
 
   TextEditingController _nombreMedicamento = TextEditingController();
   int _dosis = 50;
-    DateTime _fechaFinMedicamento = DateTime.now();
-    List<Widget> _tarjetas = [];
+  DateTime _fechaFinMedicamento = DateTime.now();
+  List<Widget> _tarjetas = [];
 
   //Establecemos la alarma con sus configuraciones
   void establecerAlarma(DateTime fechaMedicamento) async {
