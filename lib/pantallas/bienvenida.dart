@@ -39,6 +39,7 @@ class _BienvenidaState extends State<Bienvenida> {
   DateTime _fechaFinMedicamento = DateTime.now();
   DateTime _fechaInicioMedicamento = DateTime.now();
   List<Widget> _tarjetas = [];
+  String idMedTemporal = "";
 
   //Establecemos la alarma con sus configuraciones
   void establecerAlarma(Medicamento medicamento) async {
@@ -56,6 +57,116 @@ class _BienvenidaState extends State<Bienvenida> {
     };
     //Guardamos el medicamento en la coleccion de medicamentos con id de su fecha final en milisegundos
     await db.collection("Medicamentos").doc(medicamento.id.toString()).set(detallesMedicamento);
+  }
+
+  void _modificarMedicamento(QueryDocumentSnapshot doc) async {
+    //Obtenemos el id del medicamento que se quiere modificar
+    String docId = doc.id;
+    final datos = doc.data() as Map<String, dynamic>;
+    _nombreMedicamento.text = datos['nombre'] ?? '';
+    _dosis = (datos['dosis'] as num?)?.toInt() ?? 0;
+    if (datos.containsKey('fechaFin') && datos['fechaFin'] is Timestamp) {
+      _fechaFinMedicamento = (datos['fechaFin'] as Timestamp).toDate();
+    } else {
+      _fechaFinMedicamento = DateTime.now();
+    }
+
+    showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text("Editar medicamento"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nombreMedicamento,
+                decoration: InputDecoration(
+                  labelText : "Nombre del Medicamento",
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(10),
+              ),
+              Text("Fecha Final de Medicación"),
+              Padding(
+                padding: EdgeInsets.all(10),
+              ),
+              CupertinoCalendarPickerButton(
+                minimumDateTime: _fechaFinMedicamento,
+                maximumDateTime: DateTime(2026, 7, 10),
+                initialDateTime: _fechaFinMedicamento,
+                currentDateTime: _fechaInicioMedicamento,
+                mode: CupertinoCalendarMode.dateTime,
+                timeLabel: 'Final',
+                onDateTimeChanged: (fechaFin) {
+                  _fechaFinMedicamento = fechaFin;
+                },
+              ),
+              Padding(
+                padding: EdgeInsets.all(10),
+              ),
+              Text("Dosis"),
+              //Construimos un Stateful local para poder visualizar el cambio del seleccionador de numero
+              StatefulBuilder(builder: (BuildContext context, StateSetter setNumberState){
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    NumberPicker(
+                      value: _dosis,
+                      minValue: 0,
+                      maxValue: 500,
+                      step: 5,
+                      itemHeight: 70,
+                      itemWidth: 70,
+                      axis: Axis.horizontal,
+                      onChanged: (value) =>
+                          setNumberState(() => _dosis = value),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color.fromARGB(66, 155, 141, 141)),
+                      ),
+                    ),
+                    Text('Mg: $_dosis'),
+                  ],
+                );
+              }),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text("Cancelar"),
+              onPressed: () {
+                //Limpiamos
+                _nombreMedicamento.text = "";
+                _fechaFinMedicamento = DateTime.now();
+                _dosis = 50;
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text("Agregar"),
+              onPressed: () {
+                //Guardo lo que hay ahora en el dialog excepto el id
+                Map<String, dynamic> datosNuevos = {
+                  'nombre': _nombreMedicamento.text,
+                  'fechaFin': Timestamp.fromDate(_fechaFinMedicamento),
+                  'fechaInicio': Timestamp.fromDate(_fechaInicioMedicamento),
+                  'dosis': _dosis
+                };
+                db.collection("Medicamentos").doc(docId).update(datosNuevos);
+                //Limpiamos los campos de los detalles del medicamento
+                _nombreMedicamento.text = "";
+                _fechaFinMedicamento = DateTime.now();
+                _dosis = 50;
+                setState(() {
+
+                });
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        )
+    );
   }
 
   void _eliminarMedicamento(QueryDocumentSnapshot doc) async {
@@ -82,14 +193,14 @@ class _BienvenidaState extends State<Bienvenida> {
     return "$d/$m/$y";
   } 
 
-  //Obtenemos los medicamentos almacenamos en firebase y los construimos en una tarjeta
+  //Obtenemos los medicamentos almacenados en firebase y los construimos en una tarjeta
   Future<void> _obtenerMedicamento() async {
     final snapshot = await FirebaseFirestore.instance.collection('Medicamentos').get();
     _tarjetas = [
       for (var doc in snapshot.docs)
       //Código de la tarjeta.
       Container(
-        height: 160,
+        height: 200,
         padding: EdgeInsets.all(5),
         margin: EdgeInsets.all(15),
         decoration: BoxDecoration(
@@ -120,11 +231,11 @@ class _BienvenidaState extends State<Bienvenida> {
             ),
 
             //Texto para la dosis del medicamento.
-            Flexible(
+            Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    "Dosis: ${doc['dosis']}",
+                    "Dosis: ${doc['dosis']} mg",
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: 16,
@@ -154,7 +265,7 @@ class _BienvenidaState extends State<Bienvenida> {
                       alignment: Alignment.centerRight,
                       child: ElevatedButton(
                           style: TextButton.styleFrom(
-                              fixedSize: Size.fromWidth(100),
+                              fixedSize: Size.fromWidth(104),
                               backgroundColor: Colors.white,
                               foregroundColor: Colors.black,
                               shape: RoundedRectangleBorder(
@@ -162,7 +273,9 @@ class _BienvenidaState extends State<Bienvenida> {
                                       4)
                               )
                           ),
-                          onPressed: null,
+                          onPressed: () {
+                            _modificarMedicamento(doc);
+                          },
                           child: Text(
                             "Ajustar",
                             style: TextStyle(
@@ -176,8 +289,8 @@ class _BienvenidaState extends State<Bienvenida> {
               ),
             ),
 
-            //Código para la fila con texto de Hora del medicamento y botón
-            //para ajustar el contenido.
+            //Código para la fila con texto de intervalo de fechas y botón
+            //para eliminar el contenido/la tarjeta.
             Expanded(
                 child: Row(
                   children: [
@@ -185,7 +298,7 @@ class _BienvenidaState extends State<Bienvenida> {
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            "Periodo: ${obtenerFecha(doc['fecha_inicio'].toDate())} a ${obtenerFecha(doc['fecha_final'].toDate())}",
+                            "Tomar desde ${obtenerFecha(doc['fecha_inicio'].toDate())} hasta ${obtenerFecha(doc['fecha_final'].toDate())}",
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 16,
@@ -197,7 +310,7 @@ class _BienvenidaState extends State<Bienvenida> {
                         alignment: Alignment.bottomRight,
                         child: ElevatedButton(
                             style: TextButton.styleFrom(
-                                fixedSize: Size.fromWidth(100),
+                                fixedSize: Size.fromWidth(104),
                                 backgroundColor: Colors.white,
                                 foregroundColor: Colors.black,
                                 shape: RoundedRectangleBorder(
@@ -249,7 +362,7 @@ class _BienvenidaState extends State<Bienvenida> {
                       TextField(
                         controller: _nombreMedicamento,
                         decoration: InputDecoration(
-                          labelText : "Medicamento",
+                          labelText : "Nombre del Medicamento",
                         ),
                       ),
                       Padding(
@@ -277,13 +390,15 @@ class _BienvenidaState extends State<Bienvenida> {
                       //Construimos un Stateful local para poder visualizar el cambio del seleccionador de numero 
                       StatefulBuilder(builder: (BuildContext context, StateSetter setNumberState){
                         return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           NumberPicker(
                             value: _dosis,
                             minValue: 0,
                             maxValue: 500,
                             step: 5,
-                            itemHeight: 100,
+                            itemHeight: 70,
+                            itemWidth: 70,
                             axis: Axis.horizontal,
                             onChanged: (value) =>
                                 setNumberState(() => _dosis = value),
@@ -302,6 +417,9 @@ class _BienvenidaState extends State<Bienvenida> {
                     TextButton(
                       child: Text("Cancelar"),
                       onPressed: () {
+                        _nombreMedicamento.text = "";
+                        _fechaFinMedicamento = DateTime.now();
+                        _dosis = 50;
                         Navigator.of(context).pop();
                       },
                     ),
@@ -324,6 +442,9 @@ class _BienvenidaState extends State<Bienvenida> {
                         _nombreMedicamento.text = "";
                         _fechaFinMedicamento = DateTime.now();
                         _dosis = 50;
+                        setState(() {
+
+                        });
                         Navigator.of(context).pop();
                       },
                     ),
