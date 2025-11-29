@@ -319,6 +319,9 @@ class _BienvenidaState extends State<Bienvenida> {
                                 )
                             ),
                             onPressed: () {
+                              //Eliminamos las notificaciones del medicamento en base a su id y el rango de la fecha final y de inicio
+                              //Convertimos los valores del documento de String a int y de Timestamp a Datetime
+                              Notificacion.eliminarNotificacion(int.parse(doc.id), doc['fecha_inicio'].toDate(), doc['fecha_final'].toDate());
                               _eliminarMedicamento(doc);
                             },
                             child: Text(
@@ -347,6 +350,10 @@ class _BienvenidaState extends State<Bienvenida> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //Encabezado de la pantalla
+      appBar: AppBar(
+        title: Text('¡Bienvenido(a) a tu pastillero!'),
+      ),
       //Logica para agregar medicamentos
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.redAccent,
@@ -426,9 +433,11 @@ class _BienvenidaState extends State<Bienvenida> {
                     TextButton(
                       child: Text("Agregar"),
                       onPressed: () {
+                        //Basamos el id en la acumulacion de milisegundos que han pasado desde la epoca Epoch 1/1/1970
+                        //hasta la fechahora actual, generando un id unico para cada medicamento
+                        int id = _fechaInicioMedicamento.millisecondsSinceEpoch ~/ 10000;
+
                         //Construimos el objeto tipo Medicamento que vamos a almacenar y usar para las notificaciones
-                        // Crear ID único basado en datetime en milisegundos
-                        int id = DateTime.now().millisecondsSinceEpoch ~/ 10000;
                         final med = Medicamento(
                           id: id,
                           nombre: _nombreMedicamento.text,
@@ -438,13 +447,12 @@ class _BienvenidaState extends State<Bienvenida> {
                         //Almacenamos el medicamento en firebase
                         guardarMedicamento(med);
                         establecerAlarma(med);
+                        //Obtenemos los medicamentos guardados en Firebase para refrescar las tarjetas de la pantalla
+                        _obtenerMedicamento();
                         //Limpiamos los campos de los detalles del medicamento
                         _nombreMedicamento.text = "";
                         _fechaFinMedicamento = DateTime.now();
                         _dosis = 50;
-                        setState(() {
-
-                        });
                         Navigator.of(context).pop();
                       },
                     ),

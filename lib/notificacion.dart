@@ -65,13 +65,42 @@ class Notificacion {
       iOS: iosDetalles,
     );
 
-    await _notificacion.zonedSchedule(
-      medicamento.id,
-      medicamento.nombre,
-      'Tomate tu ${medicamento.nombre}',
-      tz.TZDateTime.from(medicamento.fecha_final, tz.local),
-      detallesNotificacion,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
+    //Obtenemos la diferencia de dias que hay entre la fecha en que termina el medicamento e incia
+    final int intervaloDias = medicamento.fecha_final.difference(medicamento.fecha_inicial).inDays + 1;
+
+    //Recorremos todos los dias en los que debe llegar la notificacion
+    for (int i = 0; i < intervaloDias; i++) {
+      //Generemos la nueva fecha en la que va a sonar la notificacion con fecha de hoy y hora,minutos,segundos de la fecha final
+      //(fecha final porque es la que contiene la hora del medicamento)
+      DateTime nuevaFecha = DateTime(medicamento.fecha_inicial.year, medicamento.fecha_inicial.month,
+                          medicamento.fecha_inicial.day, medicamento.fecha_final.hour, medicamento.fecha_final.minute,
+                          medicamento.fecha_final.second);
+
+      //Si la nueva fecha ya paso hoy, recorremos en un dia la nueva fecha para que se programe manana
+      if (nuevaFecha.isBefore(DateTime.now())) {
+        nuevaFecha = nuevaFecha.add(Duration(days: 1));
+      }
+      
+      //Programamos la alarma para ese dia, sumandole i al id para que cada una sea unica y no se sobrescriban
+      await _notificacion.zonedSchedule(
+        medicamento.id + i,
+        medicamento.nombre,
+        '¡Hora de tu ${medicamento.nombre} ${medicamento.dosis} mg!',
+        tz.TZDateTime.from(nuevaFecha, tz.local),
+        detallesNotificacion,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    }
+  }
+
+  static Future<void> eliminarNotificacion(int idNotificacion, DateTime fechaInicial, DateTime fechaFinal) async {
+    //Obtenemos la diferencia de dias que hay entre la fecha en que termina el medicamento e incia
+    final int intervaloDias = fechaFinal.difference(fechaInicial).inDays + 1;
+    
+    //Seguimos la misma logica que al crear la notificacion, usando el contador i como id de la notificacion
+    for (int i = 0; i < intervaloDias; i++) {
+      //Cancelamos la notificacion de ese medicamento en base a su id con la que fue programada
+      await _notificacion.cancel(idNotificacion + i);
+    }
   }
 }
