@@ -3,6 +3,8 @@ import 'package:medimind/fotografia.dart';
 import 'package:medimind/pantallas/bienvenida.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Notificacion {
   static final FlutterLocalNotificationsPlugin _notificacion =
@@ -20,7 +22,12 @@ class Notificacion {
           //Ejecucion en base al id de la accion (Accion_ok o Accion_cancelar)
           switch (notificationResponse.actionId) {
             case 'Accion_ok':
-              print(await Fotografia.tomarFoto());
+              final String? ruta = await Fotografia.tomarFoto();
+              if (ruta != null) {
+                await _enviarCorreo(ruta);
+              } else {
+                print("No se tomó la fotografía. Cancelada por el usuario.");
+              }
               break;
             case 'Accion_cancelar':
               print("El usuario presionó Postergar");
@@ -33,6 +40,26 @@ class Notificacion {
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('America/Mexico_City'));
     await _requestExactAlarmsPermission();
+  }
+
+  static Future<void> _enviarCorreo(String ruta) async {
+    final db = FirebaseFirestore.instance;
+    final correoConfig = db.collection('correos').doc('correoConfig');
+    print(correoConfig);
+    final Email correo = Email(
+      body: "Enviamos este correo para notificar que la persona se ha tomado su medicamento a la hora indicada.",
+      subject: "Reporte de medicamento.",
+      recipients: ['$correoConfig'], //Aqui debe de obtener el correo configurado de firebase.
+      attachmentPaths: [ruta],
+      isHTML: false
+    );
+
+    try {
+      await FlutterEmailSender.send(correo);
+      print("Correo enviado.");
+    } catch (error) {
+      print("Error al intentar enviar el correo.");
+    }
   }
 
   static Future<void> _requestExactAlarmsPermission() async {

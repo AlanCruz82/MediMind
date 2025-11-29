@@ -311,6 +311,7 @@ class _BienvenidaState extends State<Bienvenida> {
       //Encabezado de la pantalla
       appBar: AppBar(
         title: Text('¡Bienvenido(a) a tu pastillero!'),
+        centerTitle: true,
       ),
       //Logica para agregar medicamentos
       floatingActionButton: FloatingActionButton(
