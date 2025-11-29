@@ -73,7 +73,7 @@ class Notificacion {
       //Generemos la nueva fecha en la que va a sonar la notificacion con fecha de hoy y hora,minutos,segundos de la fecha final
       //(fecha final porque es la que contiene la hora del medicamento)
       DateTime nuevaFecha = DateTime(medicamento.fecha_inicial.year, medicamento.fecha_inicial.month,
-                          medicamento.fecha_inicial.day, medicamento.fecha_final.hour, medicamento.fecha_final.minute,
+                          medicamento.fecha_inicial.day + i, medicamento.fecha_final.hour, medicamento.fecha_final.minute,
                           medicamento.fecha_final.second);
 
       //Si la nueva fecha ya paso hoy, recorremos en un dia la nueva fecha para que se programe manana
