@@ -63,11 +63,11 @@ class _BienvenidaState extends State<Bienvenida> {
     //Obtenemos el id del medicamento que se quiere modificar
     String docId = doc.id;
     final datos = doc.data() as Map<String, dynamic>;
-    _nombreMedicamento.text = datos['nombre'] ?? '';
-    _dosis = (datos['dosis'] as num?)?.toInt() ?? 0;
-    if (datos.containsKey('fechaFin') && datos['fechaFin'] is Timestamp) {
-      _fechaFinMedicamento = (datos['fechaFin'] as Timestamp).toDate();
+    if (datos.containsKey('fecha_final') && datos['fecha_final'] is Timestamp) {
+      _fechaFinMedicamento = (datos['fecha_final'] as Timestamp).toDate();
+      print("Fecha encontrada: $_fechaFinMedicamento");
     } else {
+      print("No hay objeto, pongo el tiempo de ahora");
       _fechaFinMedicamento = DateTime.now();
     }
 
@@ -78,15 +78,6 @@ class _BienvenidaState extends State<Bienvenida> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: _nombreMedicamento,
-                decoration: InputDecoration(
-                  labelText : "Nombre del Medicamento",
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(10),
-              ),
               Text("Fecha Final de Medicación"),
               Padding(
                 padding: EdgeInsets.all(10),
@@ -102,34 +93,6 @@ class _BienvenidaState extends State<Bienvenida> {
                   _fechaFinMedicamento = fechaFin;
                 },
               ),
-              Padding(
-                padding: EdgeInsets.all(10),
-              ),
-              Text("Dosis"),
-              //Construimos un Stateful local para poder visualizar el cambio del seleccionador de numero
-              StatefulBuilder(builder: (BuildContext context, StateSetter setNumberState){
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    NumberPicker(
-                      value: _dosis,
-                      minValue: 0,
-                      maxValue: 500,
-                      step: 5,
-                      itemHeight: 70,
-                      itemWidth: 70,
-                      axis: Axis.horizontal,
-                      onChanged: (value) =>
-                          setNumberState(() => _dosis = value),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color.fromARGB(66, 155, 141, 141)),
-                      ),
-                    ),
-                    Text('Mg: $_dosis'),
-                  ],
-                );
-              }),
             ],
           ),
           actions: [
@@ -148,16 +111,11 @@ class _BienvenidaState extends State<Bienvenida> {
               onPressed: () {
                 //Guardo lo que hay ahora en el dialog excepto el id
                 Map<String, dynamic> datosNuevos = {
-                  'nombre': _nombreMedicamento.text,
-                  'fechaFin': Timestamp.fromDate(_fechaFinMedicamento),
-                  'fechaInicio': Timestamp.fromDate(_fechaInicioMedicamento),
-                  'dosis': _dosis
+                  'fechaInicio': Timestamp.fromDate(_fechaInicioMedicamento)
                 };
                 db.collection("Medicamentos").doc(docId).update(datosNuevos);
                 //Limpiamos los campos de los detalles del medicamento
-                _nombreMedicamento.text = "";
                 _fechaFinMedicamento = DateTime.now();
-                _dosis = 50;
                 setState(() {
 
                 });
@@ -436,24 +394,32 @@ class _BienvenidaState extends State<Bienvenida> {
                         //Basamos el id en la acumulacion de milisegundos que han pasado desde la epoca Epoch 1/1/1970
                         //hasta la fechahora actual, generando un id unico para cada medicamento
                         int id = _fechaInicioMedicamento.millisecondsSinceEpoch ~/ 10000;
-
                         //Construimos el objeto tipo Medicamento que vamos a almacenar y usar para las notificaciones
                         final med = Medicamento(
                           id: id,
                           nombre: _nombreMedicamento.text,
                           fecha_inicial: _fechaInicioMedicamento,
                           fecha_final: _fechaFinMedicamento,
-                          dosis: _dosis);
-                        //Almacenamos el medicamento en firebase
-                        guardarMedicamento(med);
-                        establecerAlarma(med);
-                        //Obtenemos los medicamentos guardados en Firebase para refrescar las tarjetas de la pantalla
-                        _obtenerMedicamento();
-                        //Limpiamos los campos de los detalles del medicamento
-                        _nombreMedicamento.text = "";
-                        _fechaFinMedicamento = DateTime.now();
-                        _dosis = 50;
-                        Navigator.of(context).pop();
+                          dosis: _dosis
+                        );
+                        print("Print");
+                        print(med);
+                        if(med.nombre.isNotEmpty){
+                          //Almacenamos el medicamento en firebase
+                          guardarMedicamento(med);
+                          establecerAlarma(med);
+                          //Obtenemos los medicamentos guardados en Firebase para refrescar las tarjetas de la pantalla
+                          _obtenerMedicamento();
+                          //Limpiamos los campos de los detalles del medicamento
+                          _nombreMedicamento.text = "";
+                          _fechaFinMedicamento = DateTime.now();
+                          _dosis = 50;
+                          Navigator.of(context).pop();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Ingresa el nombre del medicamento."))
+                          );
+                        }
                       },
                     ),
                   ],
