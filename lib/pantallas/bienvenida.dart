@@ -403,8 +403,6 @@ class _BienvenidaState extends State<Bienvenida> {
                           fecha_final: _fechaFinMedicamento,
                           dosis: _dosis
                         );
-                        print("Print");
-                        print(med);
                         if(med.nombre.isNotEmpty){
                           //Almacenamos el medicamento en firebase
                           guardarMedicamento(med);

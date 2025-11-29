@@ -6,7 +6,7 @@
     <application
         android:label="medimind"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/cap">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -56,4 +56,11 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+    <!-- consultas necesarias para abrir la aplicacion de correo-->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+  </queries>
 </manifest>

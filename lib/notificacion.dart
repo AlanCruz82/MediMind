@@ -13,7 +13,7 @@ class Notificacion {
   static Future<void> inicializar() async {
     await _notificacion.initialize(
       const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('@mipmap/cap'),
         iOS: DarwinInitializationSettings(),
       ),
       //Callback de las acciones de la notificacion
@@ -24,7 +24,7 @@ class Notificacion {
             case 'Accion_ok':
               final String? ruta = await Fotografia.tomarFoto();
               if (ruta != null) {
-                await _enviarCorreo(ruta);
+                await _enviarCorreo(ruta, notificationResponse.payload);
               } else {
                 print("No se tomó la fotografía. Cancelada por el usuario.");
               }
@@ -42,14 +42,14 @@ class Notificacion {
     await _requestExactAlarmsPermission();
   }
 
-  static Future<void> _enviarCorreo(String ruta) async {
+  static Future<void> _enviarCorreo(String ruta, String? nombreMedicamento) async {
     final db = FirebaseFirestore.instance;
     final DocumentSnapshot correoConfig = await db.collection('correos').doc('correoConfig').get();
     final datos = correoConfig.data()! as Map<String, dynamic>;
     String correoDestino = datos['email'] as String;
     final Email correo = Email(
-      body: "Enviamos este correo para notificar que la persona se ha tomado su medicamento a la hora indicada.",
-      subject: "Reporte de medicamento.",
+      body: "Enviamos este correo para notificar que la persona se ha tomado su medicamento $nombreMedicamento a la hora indicada.",
+      subject: "Reporte de medicamento $nombreMedicamento.",
       recipients: [correoDestino], //Aqui debe de obtener el correo configurado de firebase.
       attachmentPaths: [ruta],
       isHTML: false
@@ -92,7 +92,7 @@ class Notificacion {
       android: androidDetalles,
       iOS: iosDetalles,
     );
-
+  
     //Obtenemos la diferencia de dias que hay entre la fecha en que termina el medicamento e incia
     final int intervaloDias = medicamento.fecha_final.difference(medicamento.fecha_inicial).inDays + 1;
 
@@ -117,6 +117,7 @@ class Notificacion {
         tz.TZDateTime.from(nuevaFecha, tz.local),
         detallesNotificacion,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: medicamento.nombre //String que vamos a enviar junto con la notificacion para poder saber de que medi se tomo foto
       );
     }
   }
