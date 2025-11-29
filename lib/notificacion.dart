@@ -44,12 +44,13 @@ class Notificacion {
 
   static Future<void> _enviarCorreo(String ruta) async {
     final db = FirebaseFirestore.instance;
-    final correoConfig = db.collection('correos').doc('correoConfig');
-    print(correoConfig);
+    final DocumentSnapshot correoConfig = await db.collection('correos').doc('correoConfig').get();
+    final datos = correoConfig.data()! as Map<String, dynamic>;
+    String correoDestino = datos['email'] as String;
     final Email correo = Email(
       body: "Enviamos este correo para notificar que la persona se ha tomado su medicamento a la hora indicada.",
       subject: "Reporte de medicamento.",
-      recipients: ['$correoConfig'], //Aqui debe de obtener el correo configurado de firebase.
+      recipients: [correoDestino], //Aqui debe de obtener el correo configurado de firebase.
       attachmentPaths: [ruta],
       isHTML: false
     );
