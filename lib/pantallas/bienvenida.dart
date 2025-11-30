@@ -39,7 +39,6 @@ class _BienvenidaState extends State<Bienvenida> {
   DateTime _fechaFinMedicamento = DateTime.now();
   DateTime _fechaInicioMedicamento = DateTime.now();
   List<Widget> _tarjetas = [];
-  String idMedTemporal = "";
 
   //Establecemos la alarma con sus configuraciones
   void establecerAlarma(Medicamento medicamento) async {
@@ -136,15 +135,14 @@ class _BienvenidaState extends State<Bienvenida> {
   }
 
   //Obtenemos la hora del Timstamp para mostrarla en formato HH:MM
-  String _obtenerHora(Timestamp timestamp) {
-    DateTime fecha = timestamp.toDate();
-    String hora = fecha.hour.toString().padLeft(2, '0');
-    String minutos = fecha.minute.toString().padLeft(2, '0');
+  String _obtenerHora(DateTime fechaHora) {
+    String hora = fechaHora.hour.toString().padLeft(2, '0');
+    String minutos = fechaHora.minute.toString().padLeft(2, '0');
     return "$hora:$minutos";
   } 
 
   //Obtenemos la fecha del Timestamp guardado en firebase
-  String obtenerFecha(DateTime fecha) {
+  String _obtenerFecha(DateTime fecha) {
     final d = fecha.day.toString().padLeft(2, '0');
     final m = fecha.month.toString().padLeft(2, '0');
     final y = fecha.year.toString();
@@ -211,7 +209,7 @@ class _BienvenidaState extends State<Bienvenida> {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                            "Hora: ${_obtenerHora(doc['fecha_final'] as Timestamp)}",
+                            "Hora: ${_obtenerHora(doc['fecha_final'].toDate())}",
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 16,
@@ -256,7 +254,7 @@ class _BienvenidaState extends State<Bienvenida> {
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            "Tomar desde ${obtenerFecha(doc['fecha_inicio'].toDate())} hasta ${obtenerFecha(doc['fecha_final'].toDate())}",
+                            "Tomar desde ${_obtenerFecha(doc['fecha_inicio'].toDate())} hasta ${_obtenerFecha(doc['fecha_final'].toDate())}",
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 16,

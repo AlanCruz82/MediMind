@@ -5,11 +5,13 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 
 class Notificacion {
   static final FlutterLocalNotificationsPlugin _notificacion =
       FlutterLocalNotificationsPlugin();
 
+  //Inicializacion del plugin y el callback de las notificaciones, se inicializa en el main
   static Future<void> inicializar() async {
     await _notificacion.initialize(
       const InitializationSettings(
@@ -21,10 +23,14 @@ class Notificacion {
         if (notificationResponse.notificationResponseType == NotificationResponseType.selectedNotificationAction) {
           //Ejecucion en base al id de la accion (Accion_ok o Accion_cancelar)
           switch (notificationResponse.actionId) {
+            //En caso de que el usuario haya seleccionado 'Consumir'
             case 'Accion_ok':
+              //Abrimos la camara y obtenemos los valores nombre y hora medicamento del JSON
               final String? ruta = await Fotografia.tomarFoto();
               if (ruta != null) {
-                await _enviarCorreo(ruta, notificationResponse.payload);
+                //Obtenemos los datos del payload regresandolos a su formato JSON
+                Map<String, dynamic> datosPayload = jsonDecode(notificationResponse.payload!);
+                await _enviarCorreo(ruta, datosPayload['nombre'], datosPayload['hora']);
               } else {
                 print("No se tomó la fotografía. Cancelada por el usuario.");
               }
@@ -42,19 +48,21 @@ class Notificacion {
     await _requestExactAlarmsPermission();
   }
 
-  static Future<void> _enviarCorreo(String ruta, String? nombreMedicamento) async {
+  //Obtenemos la direccion de correo guardada en Firebase y creamos un objeto Email con los detalles generados por el medicamento
+  static Future<void> _enviarCorreo(String ruta, String nombreMedicamento, String horaMedicamento) async {
     final db = FirebaseFirestore.instance;
     final DocumentSnapshot correoConfig = await db.collection('correos').doc('correoConfig').get();
     final datos = correoConfig.data()! as Map<String, dynamic>;
     String correoDestino = datos['email'] as String;
     final Email correo = Email(
-      body: "Enviamos este correo para notificar que la persona se ha tomado su medicamento $nombreMedicamento a la hora indicada.",
+      body: "Enviamos este correo para notificar que la persona se ha tomado su medicamento $nombreMedicamento a la hora $horaMedicamento.",
       subject: "Reporte de medicamento $nombreMedicamento.",
       recipients: [correoDestino], //Aqui debe de obtener el correo configurado de firebase.
       attachmentPaths: [ruta],
       isHTML: false
     );
 
+    //Enviamos el mensaje en caso de que si se pueda y si no obtenemos la excepcion generada en el catch
     try {
       await FlutterEmailSender.send(correo);
       print("Correo enviado.");
@@ -63,6 +71,7 @@ class Notificacion {
     }
   }
 
+  //Obtenemos el valor del permiso Android para usar alarmas exactas
   static Future<void> _requestExactAlarmsPermission() async {
     final androidPlugin = _notificacion
         .resolvePlatformSpecificImplementation<
@@ -74,6 +83,7 @@ class Notificacion {
     }
   }
 
+  //Programamos las notificaciones en base a los detalles del medicamento recibido en el onpressed de 'Agregar' en bienvenida.dart
   static Future<void> programarNotificacion(Medicamento medicamento) async {
     const androidDetalles = AndroidNotificationDetails(
       'important_notificacions',
@@ -92,7 +102,14 @@ class Notificacion {
       android: androidDetalles,
       iOS: iosDetalles,
     );
-  
+
+    //Datos en formato JSON que se van a enviar como payload en la notificacion
+    Map<String, dynamic> datosNotificacion = {
+      'nombre': medicamento.nombre,
+      'hora': medicamento.fecha_final.hour.toString().padLeft(2, '0') + ':' +
+      medicamento.fecha_final.minute.toString().padLeft(2, '0'), 
+    };
+
     //Obtenemos la diferencia de dias que hay entre la fecha en que termina el medicamento e incia
     final int intervaloDias = medicamento.fecha_final.difference(medicamento.fecha_inicial).inDays + 1;
 
@@ -117,11 +134,12 @@ class Notificacion {
         tz.TZDateTime.from(nuevaFecha, tz.local),
         detallesNotificacion,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: medicamento.nombre //String que vamos a enviar junto con la notificacion para poder saber de que medi se tomo foto
+        payload: jsonEncode(datosNotificacion) //Convertimos el JSON a String para poder enviarlo en el payload
       );
     }
   }
 
+  //Eliminamos las notificaciones generadas para el medicamento en su intervalo de tiempo de [fecha inicio-fecha final]
   static Future<void> eliminarNotificacion(int idNotificacion, DateTime fechaInicial, DateTime fechaFinal) async {
     //Obtenemos la diferencia de dias que hay entre la fecha en que termina el medicamento e incia
     final int intervaloDias = fechaFinal.difference(fechaInicial).inDays + 1;
