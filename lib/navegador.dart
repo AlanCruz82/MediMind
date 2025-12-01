@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'pantallas/bienvenida.dart';
-import 'pantallas/contador.dart';
+import 'pantallas/pastillero.dart';
+import 'pantallas/reporte.dart';
 
 class PantallaPrincipal extends StatefulWidget {
   @override
@@ -18,8 +18,8 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
 
     //Inicalizamos el estado de cada pantalla, pasandole la funcion para cambiar de pantalla a la pantalla del login
     _pantallas = [
-      Bienvenida(),
-      Contador(),
+      Pastillero(),
+      Reporte(),
     ];
   }
 

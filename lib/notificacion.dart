@@ -1,6 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:medimind/fotografia.dart';
-import 'package:medimind/pantallas/bienvenida.dart';
+import 'package:medimind/pantallas/pastillero.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:flutter_email_sender/flutter_email_sender.dart';

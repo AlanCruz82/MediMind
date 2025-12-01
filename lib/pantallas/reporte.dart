@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Contador extends StatefulWidget {
+class Reporte extends StatefulWidget {
   @override
-  _ContadorState createState() => _ContadorState();
+  _ReporteState createState() => _ReporteState();
 }
 
-class _ContadorState extends State<Contador> {
+class _ReporteState extends State<Reporte> {
   final emailController = TextEditingController();
   final db = FirebaseFirestore.instance;
   final String docId = 'correoConfig';

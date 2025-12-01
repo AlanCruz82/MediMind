@@ -4,9 +4,9 @@ import 'package:medimind/notificacion.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Bienvenida extends StatefulWidget {
+class Pastillero extends StatefulWidget {
   @override
-  _BienvenidaState createState() => _BienvenidaState();
+  _PastilleroState createState() => _PastilleroState();
 }
 
 class Medicamento {
@@ -25,7 +25,7 @@ class Medicamento {
   });
 }
 
-class _BienvenidaState extends State<Bienvenida> {
+class _PastilleroState extends State<Pastillero> {
 
   @override
   void initState() {
@@ -46,7 +46,7 @@ class _BienvenidaState extends State<Bienvenida> {
     Notificacion.programarNotificacion(medicamento);
   }
 
-  //Metodo para guardar los datos de la cita en firebase con los valores del usuario
+  //Metodo para guardar los datos del medicamento en firebase con los valores del usuario
   void guardarMedicamento(Medicamento medicamento) async{
     Map<String,dynamic> detallesMedicamento = {
       'nombre' : medicamento.nombre,
@@ -58,22 +58,21 @@ class _BienvenidaState extends State<Bienvenida> {
     await db.collection("Medicamentos").doc(medicamento.id.toString()).set(detallesMedicamento);
   }
 
+  //Ajustamos la fecha final del medicamento seleccionado
   void _modificarMedicamento(QueryDocumentSnapshot doc) async {
-    //Obtenemos el id del medicamento que se quiere modificar
-    String docId = doc.id;
-    final datos = doc.data() as Map<String, dynamic>;
-    if (datos.containsKey('fecha_final') && datos['fecha_final'] is Timestamp) {
-      _fechaFinMedicamento = (datos['fecha_final'] as Timestamp).toDate();
-      print("Fecha encontrada: $_fechaFinMedicamento");
-    } else {
-      print("No hay objeto, pongo el tiempo de ahora");
-      _fechaFinMedicamento = DateTime.now();
-    }
+    Map<String,dynamic> propiedadesMedicamento = doc.data() as Map<String,dynamic>;
+      int docId = int.parse(doc.id);
+      String docNombre = propiedadesMedicamento['nombre'];
+      DateTime docFechaInicio = propiedadesMedicamento['fecha_inicio'].toDate();
+      DateTime docFechaFin = propiedadesMedicamento['fecha_final'].toDate();
+      int docDosis = propiedadesMedicamento['dosis'];
+
+    DateTime nuevaFechaFin = docFechaFin;
 
     showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-          title: Text("Editar medicamento"),
+          title: Text(docNombre),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -82,14 +81,14 @@ class _BienvenidaState extends State<Bienvenida> {
                 padding: EdgeInsets.all(10),
               ),
               CupertinoCalendarPickerButton(
-                minimumDateTime: _fechaFinMedicamento,
+                minimumDateTime: docFechaFin,
                 maximumDateTime: DateTime(2026, 7, 10),
-                initialDateTime: _fechaFinMedicamento,
+                initialDateTime: docFechaFin,
                 currentDateTime: _fechaInicioMedicamento,
                 mode: CupertinoCalendarMode.dateTime,
                 timeLabel: 'Final',
                 onDateTimeChanged: (fechaFin) {
-                  _fechaFinMedicamento = fechaFin;
+                  nuevaFechaFin = fechaFin;
                 },
               ),
             ],
@@ -106,18 +105,22 @@ class _BienvenidaState extends State<Bienvenida> {
               },
             ),
             TextButton(
-              child: Text("Agregar"),
+              child: Text("Actualizar"),
               onPressed: () {
-                //Guardo lo que hay ahora en el dialog excepto el id
-                Map<String, dynamic> datosNuevos = {
-                  'fechaInicio': Timestamp.fromDate(_fechaInicioMedicamento)
-                };
-                db.collection("Medicamentos").doc(docId).update(datosNuevos);
-                //Limpiamos los campos de los detalles del medicamento
-                _fechaFinMedicamento = DateTime.now();
-                setState(() {
-
-                });
+                //Actulizamos la fecha-hora en Firebase
+                doc.reference.update({'fecha_final': Timestamp.fromDate(nuevaFechaFin)});
+                //Creamos un nuevo medicamento con la nueva fecha-hora final seleccionada
+                Medicamento nuevoMedicamento = Medicamento(id: docId,
+                            nombre: docNombre,
+                            fecha_inicial: docFechaInicio,
+                            fecha_final: nuevaFechaFin,
+                            dosis: docDosis);
+                //Eliminamos las notificaciones del medicamento
+                Notificacion.eliminarNotificacion(docId, docFechaInicio, nuevaFechaFin);
+                //Creamos las nuevas notificaciones con la nueva fecha-hora final
+                Notificacion.programarNotificacion(nuevoMedicamento);
+                //Refrescamos las tarjetas de medicamentos
+                _obtenerMedicamento();
                 Navigator.of(context).pop();
               },
             ),
