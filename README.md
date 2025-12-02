@@ -15,7 +15,9 @@ La persona mayor puede agregar sus medicamentos en la pantalla de Pastillero en 
 
 El correo de la persona encargada de la atención de la persona mayor puede ser actualizado en la pantalla Reporte para recibir los correos eléctronicos con la evidencia del consumo del medicamento en su tiempo y fecha.
 
-![Ejemplo](docs/imgs/correo.png)
-![Ejemplo](docs/imgs/notificacion.png)
-![Ejemplo](docs/imgs/pastillero.png)
-![Ejemplo](docs/imgs/reporte.png)
+<p align="center">
+  <img src="docs/imgs/correo.png" alt="Captura 1" width="220" style="margin: 5px;"/>
+  <img src="docs/imgs/notificacion.png" alt="Captura 2" width="220" style="margin: 5px;"/>
+  <img src="docs/imgs/pastillero.png" alt="Captura 3" width="220" style="margin: 5px;"/>
+  <img src="docs/imgs/reporte.png" alt="Captura 4" width="220" style="margin: 5px;"/>
+</p>
